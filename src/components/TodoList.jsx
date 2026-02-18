@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
+import EditModal from './EditModal'; // <--- IMPORT THE MODAL
 
 export default function TodoList({ token, onLogout }) {
   const [todos, setTodos] = useState([]);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  
+  // NEW: State to track which todo is being edited (null = no modal)
+  const [editingTodo, setEditingTodo] = useState(null);
 
   const API_URL = 'http://localhost:3000';
 
@@ -45,7 +49,6 @@ export default function TodoList({ token, onLogout }) {
     } catch (error) { console.error(error); }
   };
 
-  // --- NEW: DELETE FUNCTION ---
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this task?")) return;
     try {
@@ -54,13 +57,11 @@ export default function TodoList({ token, onLogout }) {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
-        // Optimistic UI update: Remove it from the list immediately
         setTodos(todos.filter(todo => todo.id !== id));
       }
     } catch (error) { console.error(error); }
   };
 
-  // --- NEW: TOGGLE COMPLETE FUNCTION ---
   const handleToggle = async (todo) => {
     const newStatus = !todo.completed;
     try {
@@ -77,10 +78,36 @@ export default function TodoList({ token, onLogout }) {
         })
       });
       if (response.ok) {
-        // Update just this one item in our local state
         setTodos(todos.map(t => 
           t.id === todo.id ? { ...t, completed: newStatus } : t
         ));
+      }
+    } catch (error) { console.error(error); }
+  };
+
+  // --- NEW: UPDATE FUNCTION ---
+  const handleUpdateTodo = async (id, newTitle, newDesc) => {
+    const todo = todos.find(t => t.id === id);
+    try {
+      const response = await fetch(`${API_URL}/todos/${id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ 
+          title: newTitle, 
+          description: newDesc, 
+          completed: todo.completed 
+        })
+      });
+
+      if (response.ok) {
+        // Update the list locally
+        setTodos(todos.map(t => 
+          t.id === id ? { ...t, title: newTitle, description: newDesc } : t
+        ));
+        setEditingTodo(null); // Close the modal
       }
     } catch (error) { console.error(error); }
   };
@@ -115,7 +142,6 @@ export default function TodoList({ token, onLogout }) {
         <ul id="todo-list">
           {todos.map((todo) => (
             <li key={todo.id}>
-              {/* CHECKBOX for toggling complete */}
               <input 
                 type="checkbox" 
                 className="todo-check"
@@ -129,7 +155,14 @@ export default function TodoList({ token, onLogout }) {
               </div>
 
               <div className="action-buttons">
-                {/* We will add the Edit button in the next step! */}
+                {/* NEW: Edit Button */}
+                <button 
+                  className="edit-btn" 
+                  onClick={() => setEditingTodo(todo)}
+                >
+                  Edit
+                </button>
+                
                 <button className="delete-btn" onClick={() => handleDelete(todo.id)}>
                   Delete
                 </button>
@@ -138,6 +171,15 @@ export default function TodoList({ token, onLogout }) {
           ))}
         </ul>
       </div>
+
+      {/* NEW: Conditionally Render the Modal */}
+      {editingTodo && (
+        <EditModal 
+          todo={editingTodo} 
+          onSave={handleUpdateTodo} 
+          onCancel={() => setEditingTodo(null)} 
+        />
+      )}
     </div>
   );
 }
