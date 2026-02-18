@@ -1,14 +1,9 @@
 import { useState } from 'react';
 
 export default function Auth({ onLogin }) {
-  // State for inputs
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  
-  // State to toggle between Login and Register views
   const [isRegister, setIsRegister] = useState(false);
-  
-  // State for error messages
   const [error, setError] = useState("");
 
   const API_URL = 'http://localhost:3000';
@@ -30,10 +25,11 @@ export default function Auth({ onLogin }) {
 
       if (response.ok) {
         if (isRegister) {
-          setIsRegister(false); // Switch to login view
+          setIsRegister(false);
           setError("Registration successful! Please log in.");
         } else {
-          onLogin(data.token); // Log the user in
+          // IMPORTANT: We pass both the token AND the username up to App.jsx
+          onLogin(data.token, username); 
         }
       } else {
         setError(data.message || "Authentication failed");
@@ -50,7 +46,6 @@ export default function Auth({ onLogin }) {
       
       <div id="auth-section">
         <div className="form-toggle">
-          {/* FIX: Added type="button" to prevent form submission */}
           <button 
             type="button" 
             className={!isRegister ? "active" : ""} 
@@ -59,7 +54,6 @@ export default function Auth({ onLogin }) {
             Login
           </button>
           
-          {/* FIX: Added type="button" to prevent form submission */}
           <button 
             type="button" 
             className={isRegister ? "active" : ""} 

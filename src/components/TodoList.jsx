@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import EditModal from './EditModal'; // <--- IMPORT THE MODAL
+import EditModal from './EditModal';
 
-export default function TodoList({ token, onLogout }) {
+export default function TodoList({ token, username, onLogout }) {
   const [todos, setTodos] = useState([]);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   
-  // NEW: State to track which todo is being edited (null = no modal)
+  // State for editing
   const [editingTodo, setEditingTodo] = useState(null);
 
   const API_URL = 'http://localhost:3000';
@@ -20,6 +20,7 @@ export default function TodoList({ token, onLogout }) {
       const response = await fetch(`${API_URL}/todos`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
       if (response.ok) {
         setTodos(await response.json());
       } else if (response.status === 401) {
@@ -32,6 +33,7 @@ export default function TodoList({ token, onLogout }) {
 
   const handleAddTodo = async () => {
     if (!newTitle) return alert("Title is required");
+
     try {
       const response = await fetch(`${API_URL}/todos`, {
         method: 'POST',
@@ -41,6 +43,7 @@ export default function TodoList({ token, onLogout }) {
         },
         body: JSON.stringify({ title: newTitle, description: newDesc })
       });
+
       if (response.ok) {
         setNewTitle("");
         setNewDesc("");
@@ -85,7 +88,6 @@ export default function TodoList({ token, onLogout }) {
     } catch (error) { console.error(error); }
   };
 
-  // --- NEW: UPDATE FUNCTION ---
   const handleUpdateTodo = async (id, newTitle, newDesc) => {
     const todo = todos.find(t => t.id === id);
     try {
@@ -103,11 +105,10 @@ export default function TodoList({ token, onLogout }) {
       });
 
       if (response.ok) {
-        // Update the list locally
         setTodos(todos.map(t => 
           t.id === id ? { ...t, title: newTitle, description: newDesc } : t
         ));
-        setEditingTodo(null); // Close the modal
+        setEditingTodo(null); // Close modal
       }
     } catch (error) { console.error(error); }
   };
@@ -118,7 +119,8 @@ export default function TodoList({ token, onLogout }) {
       
       <div id="todo-section">
         <div className="user-controls">
-          <span>User: Authorized</span>
+          {/* Display the username passed from App.jsx */}
+          <span>User: {username}</span>
           <button onClick={onLogout}>Logout</button>
         </div>
 
@@ -155,14 +157,12 @@ export default function TodoList({ token, onLogout }) {
               </div>
 
               <div className="action-buttons">
-                {/* NEW: Edit Button */}
                 <button 
                   className="edit-btn" 
                   onClick={() => setEditingTodo(todo)}
                 >
                   Edit
                 </button>
-                
                 <button className="delete-btn" onClick={() => handleDelete(todo.id)}>
                   Delete
                 </button>
@@ -172,7 +172,6 @@ export default function TodoList({ token, onLogout }) {
         </ul>
       </div>
 
-      {/* NEW: Conditionally Render the Modal */}
       {editingTodo && (
         <EditModal 
           todo={editingTodo} 

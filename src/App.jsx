@@ -4,16 +4,26 @@ import Auth from './components/Auth'
 import TodoList from './components/TodoList'
 
 function App() {
-  // This replaces "let authToken = getCookie('token')"
   const [token, setToken] = useState(null); 
+  const [username, setUsername] = useState("");
+
+  const handleLogin = (newToken, newUser) => {
+    setToken(newToken);
+    setUsername(newUser);
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    setUsername("");
+  };
 
   return (
     <>
-      {/* This replaces the "hidden" class logic */}
       { !token ? (
-        <Auth onLogin={(newToken) => setToken(newToken)} />
+        <Auth onLogin={handleLogin} />
       ) : (
-        <TodoList token={token} onLogout={() => setToken(null)} />
+        // Pass the username down to the list
+        <TodoList token={token} username={username} onLogout={handleLogout} />
       )}
     </>
   )
